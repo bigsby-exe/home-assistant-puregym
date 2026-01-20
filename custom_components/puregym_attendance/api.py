@@ -19,14 +19,15 @@ class PuregymAttendanceApiClient:
 
     async def async_get_data(self) -> dict:
         """Get attendance data from PureGym API."""
-        headers = {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'User-Agent': 'PureGym/1523 CFNetwork/1312 Darwin/21.0.0'
-        }
         authed = False
+        access_token = None
         home_gym_id = None
         
         # Authenticate and get access token
+        auth_headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': 'PureGym/1523 CFNetwork/1312 Darwin/21.0.0'
+        }
         data = {
             'grant_type': 'password',
             'username': self._username,
@@ -38,14 +39,14 @@ class PuregymAttendanceApiClient:
         try:
             async with self._session.post(
                 'https://auth.puregym.com/connect/token',
-                headers=headers,
+                headers=auth_headers,
                 data=data,
                 timeout=aiohttp.ClientTimeout(total=TIMEOUT)
             ) as response:
                 if response.status == 200:
                     auth_json = await response.json()
                     authed = True
-                    headers['Authorization'] = 'Bearer ' + auth_json['access_token']
+                    access_token = auth_json.get('access_token')
                 else:
                     error_text = await response.text()
                     _LOGGER.error(
@@ -54,14 +55,20 @@ class PuregymAttendanceApiClient:
                         error_text
                     )
 
-            if not authed:
+            if not authed or not access_token:
                 _LOGGER.error("Permission Error: Failed to authenticate")
                 raise Exception("Authentication failed")
+
+            # Prepare headers for API requests (GET requests shouldn't have Content-Type)
+            api_headers = {
+                'Authorization': 'Bearer ' + access_token,
+                'User-Agent': 'PureGym/1523 CFNetwork/1312 Darwin/21.0.0'
+            }
 
             # Get member info to find home gym ID
             async with self._session.get(
                 'https://capi.puregym.com/api/v1/member',
-                headers=headers,
+                headers=api_headers,
                 timeout=aiohttp.ClientTimeout(total=TIMEOUT)
             ) as response:
                 if response.status == 200:
@@ -83,7 +90,7 @@ class PuregymAttendanceApiClient:
             # Get attendance data
             async with self._session.get(
                 f'https://capi.puregym.com/api/v1/gyms/{str(home_gym_id)}/attendance',
-                headers=headers,
+                headers=api_headers,
                 timeout=aiohttp.ClientTimeout(total=TIMEOUT)
             ) as response:
                 if response.status == 200:
