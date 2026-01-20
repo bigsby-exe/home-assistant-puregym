@@ -1,4 +1,5 @@
 """PuregymAttendanceEntity class"""
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import ATTRIBUTION
@@ -8,6 +9,10 @@ from .const import VERSION
 
 
 class PuregymAttendanceEntity(CoordinatorEntity):
+    """Base entity for PureGym Attendance integration."""
+    
+    _attr_has_entity_name = True
+
     def __init__(self, coordinator, config_entry):
         super().__init__(coordinator)
         self.config_entry = config_entry
@@ -18,13 +23,14 @@ class PuregymAttendanceEntity(CoordinatorEntity):
         return self.config_entry.entry_id
 
     @property
-    def device_info(self):
-        return {
-            "identifiers": {(DOMAIN, self.unique_id)},
-            "name": NAME,
-            "model": VERSION,
-            "manufacturer": NAME,
-        }
+    def device_info(self) -> DeviceInfo:
+        """Return device information."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self.unique_id)},
+            name=NAME,
+            model=VERSION,
+            manufacturer=NAME,
+        )
 
     @property
     def extra_state_attributes(self):

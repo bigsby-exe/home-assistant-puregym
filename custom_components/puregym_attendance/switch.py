@@ -1,51 +1,50 @@
 """Switch platform for PureGym Attendance."""
 from homeassistant.components.switch import SwitchEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 
-from .const import DEFAULT_NAME
 from .const import DOMAIN
 from .const import ICON
 from .const import SWITCH
 from .entity import PuregymAttendanceEntity
 
 
-async def async_setup_entry(hass, entry, async_add_devices):
-    """Setup sensor platform."""
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities,
+) -> None:
+    """Setup switch platform."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_devices(
+    async_add_entities(
         [
-            PuregymAttendanceBinarySwitch(
+            PuregymAttendanceSwitch(
                 coordinator, entry
             )
         ]
     )
 
 
-class PuregymAttendanceBinarySwitch(
+class PuregymAttendanceSwitch(
     PuregymAttendanceEntity, SwitchEntity
 ):
-    """puregym_attendance switch class."""
+    """PureGym Attendance switch class."""
+
+    _attr_name = SWITCH.replace("_", " ").title()
+    _attr_icon = ICON
 
     async def async_turn_on(self, **kwargs):  # pylint: disable=unused-argument
         """Turn on the switch."""
-        await self.coordinator.api.async_set_title("bar")
+        # Switch functionality not implemented in API
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs):  # pylint: disable=unused-argument
         """Turn off the switch."""
-        await self.coordinator.api.async_set_title("foo")
+        # Switch functionality not implemented in API
         await self.coordinator.async_request_refresh()
-
-    @property
-    def name(self):
-        """Return the name of the switch."""
-        return f"{DEFAULT_NAME}_{SWITCH}"
-
-    @property
-    def icon(self):
-        """Return the icon of this switch."""
-        return ICON
 
     @property
     def is_on(self):
         """Return true if the switch is on."""
-        return self.coordinator.data.get("title", "") == "foo"
+        # Switch functionality not implemented - always return False
+        return False
