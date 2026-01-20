@@ -3,20 +3,21 @@
 NAME = "PureGym Attendance"
 DOMAIN = "puregym_attendance"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "0.0.1"
+VERSION = "0.0.2"
 
-ATTRIBUTION = "Data provided by http://jsonplaceholder.typicode.com/"
-ISSUE_URL = "https://github.com/nckltcha/puregym-attendance/issues"
+ATTRIBUTION = "Data provided by PureGym"
+ISSUE_URL = "https://github.com/bigsby-exe/home-assistant-puregym/issues"
 
 # Icons
-ICON = "mdi:format-quote-close"
+ICON = "mdi:account-group"
 
 # Device classes
 BINARY_SENSOR_DEVICE_CLASS = "connectivity"
 
 # Platforms
-
+BINARY_SENSOR = "binary_sensor"
 SENSOR = "sensor"
+SWITCH = "switch"
 
 PLATFORMS = [SENSOR]
 

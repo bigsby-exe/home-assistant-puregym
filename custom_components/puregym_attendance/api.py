@@ -1,106 +1,107 @@
-"""Sample API Client."""
-import asyncio
+"""PureGym API Client."""
 import logging
-import socket
-import requests
 import aiohttp
-import async_timeout
 
 TIMEOUT = 10
 
 _LOGGER: logging.Logger = logging.getLogger(__package__)
 
-HEADERS = {"Content-type": "application/json; charset=UTF-8"}
-
 
 class PuregymAttendanceApiClient:
-    """Add two numbers"""
+    """PureGym Attendance API Client."""
     def __init__(
         self, username: str, password: str, session: aiohttp.ClientSession
     ) -> None:
-        """Sample API Client."""
+        """Initialize PureGym API Client."""
         self._username = username
-        self._passeword = password
+        self._password = password
         self._session = session
 
     async def async_get_data(self) -> dict:
-        """Add two numbers"""
-        headers = {'Content-Type': 'application/x-www-form-urlencoded',
-                    'User-Agent': 'PureGym/1523 CFNetwork/1312 Darwin/21.0.0'}
+        """Get attendance data from PureGym API."""
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': 'PureGym/1523 CFNetwork/1312 Darwin/21.0.0'
+        }
         authed = False
         home_gym_id = None
-        session = requests.session()
+        
+        # Authenticate and get access token
         data = {
             'grant_type': 'password',
             'username': self._username,
-            'password': self._passeword,
+            'password': self._password,
             'scope': 'pgcapi',
             'client_id': 'ro.client'
         }
 
-        response = session.post('https://auth.puregym.com/connect/token',
-                headers=headers, data=data)
-        if response.status_code == 200:
-            auth_json = response.json()
-            authed = True
-            headers['Authorization'] = 'Bearer '+auth_json['access_token']
-        else:
-            _LOGGER.error(response.raise_for_status())
-
-        if not authed:
-            _LOGGER.error("Permission Error")
-
-        response = session.get('https://capi.puregym.com/api/v1/member', headers=headers)
-        if response.status_code == 200:
-            home_gym_id = response.json()['homeGymId']
-        else:
-            _LOGGER.error('Response %s', str(response.status_code))
-        response = session.get(f'https://capi.puregym.com/api/v1/gyms/{str(home_gym_id)}/attendance',
-                headers=headers)
-        return response.json()['totalPeopleInGym']
-
-    async def async_set_title(self, value: str) -> None:
-        """Get data from the API."""
-        url = "https://jsonplaceholder.typicode.com/posts/1"
-        await self.api_wrapper("patch", url, data={"title": value}, headers=HEADERS)
-
-    async def api_wrapper(
-        self, method: str, url: str, data: dict = None, headers: dict = None
-    ) -> dict:
-        """Get information from the API."""
         try:
-            async with async_timeout.timeout(TIMEOUT, loop=asyncio.get_event_loop()):
-                if method == "get":
-                    response = await self._session.get(url, headers=headers)
-                    return await response.json()
+            async with self._session.post(
+                'https://auth.puregym.com/connect/token',
+                headers=headers,
+                data=data,
+                timeout=aiohttp.ClientTimeout(total=TIMEOUT)
+            ) as response:
+                if response.status == 200:
+                    auth_json = await response.json()
+                    authed = True
+                    headers['Authorization'] = 'Bearer ' + auth_json['access_token']
+                else:
+                    error_text = await response.text()
+                    _LOGGER.error(
+                        "Authentication failed with status %s: %s",
+                        response.status,
+                        error_text
+                    )
 
-                elif method == "put":
-                    await self._session.put(url, headers=headers, json=data)
+            if not authed:
+                _LOGGER.error("Permission Error: Failed to authenticate")
+                raise Exception("Authentication failed")
 
-                elif method == "patch":
-                    await self._session.patch(url, headers=headers, json=data)
+            # Get member info to find home gym ID
+            async with self._session.get(
+                'https://capi.puregym.com/api/v1/member',
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=TIMEOUT)
+            ) as response:
+                if response.status == 200:
+                    member_json = await response.json()
+                    home_gym_id = member_json.get('homeGymId')
+                else:
+                    error_text = await response.text()
+                    _LOGGER.error(
+                        'Failed to get member info: status %s, %s',
+                        response.status,
+                        error_text
+                    )
+                    raise Exception(f"Failed to get member info: {response.status}")
 
-                elif method == "post":
-                    await self._session.post(url, headers=headers, json=data)
+            if not home_gym_id:
+                _LOGGER.error("No home gym ID found")
+                raise Exception("No home gym ID found")
 
-        except asyncio.TimeoutError as exception:
-            _LOGGER.error(
-                "Timeout error fetching information from %s - %s",
-                url,
-                exception,
-            )
+            # Get attendance data
+            async with self._session.get(
+                f'https://capi.puregym.com/api/v1/gyms/{str(home_gym_id)}/attendance',
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=TIMEOUT)
+            ) as response:
+                if response.status == 200:
+                    attendance_json = await response.json()
+                    total_people = attendance_json.get('totalPeopleInGym', 0)
+                    return {"totalPeopleInGym": total_people}
+                else:
+                    error_text = await response.text()
+                    _LOGGER.error(
+                        'Failed to get attendance: status %s, %s',
+                        response.status,
+                        error_text
+                    )
+                    raise Exception(f"Failed to get attendance: {response.status}")
 
-        except (KeyError, TypeError) as exception:
-            _LOGGER.error(
-                "Error parsing information from %s - %s",
-                url,
-                exception,
-            )
-        except (aiohttp.ClientError, socket.gaierror) as exception:
-            _LOGGER.error(
-                "Error fetching information from %s - %s",
-                url,
-                exception,
-            )
-        except Exception as exception:  # pylint: disable=broad-except
-            _LOGGER.error("Something really wrong happend! - %s", exception)
+        except aiohttp.ClientError as exception:
+            _LOGGER.error("Error fetching information from PureGym API: %s", exception)
+            raise
+        except Exception as exception:
+            _LOGGER.error("Unexpected error: %s", exception)
+            raise

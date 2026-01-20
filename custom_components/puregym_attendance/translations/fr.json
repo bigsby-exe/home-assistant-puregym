@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "PureGym Attendance",
-        "description": "Si vous avez besoin d'aide pour la configuration, regardez ici: https://github.com/nckltcha/puregym-attendance",
+        "description": "Si vous avez besoin d'aide pour la configuration, regardez ici: https://github.com/bigsby-exe/home-assistant-puregym",
         "data": {
           "username": "Identifiant",
           "password": "Mot de Passe"

@@ -17,7 +17,6 @@ class PuregymAttendanceFlowHandler(
     """Config flow for puregym_attendance."""
 
     VERSION = 1
-    CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
 
     def __init__(self):
         """Initialize."""
@@ -73,8 +72,7 @@ class PuregymAttendanceFlowHandler(
             await client.async_get_data()
             return True
         except Exception:  # pylint: disable=broad-except
-            pass
-        return True
+            return False
 
 
 class PuregymAttendanceOptionsFlowHandler(

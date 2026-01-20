@@ -27,10 +27,15 @@ class PuregymAttendanceEntity(CoordinatorEntity):
         }
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         """Return the state attributes."""
+        if self.coordinator.data is None:
+            return {
+                "attribution": ATTRIBUTION,
+                "integration": DOMAIN,
+            }
         return {
             "attribution": ATTRIBUTION,
-            "id": str(self.coordinator.data.get("id")),
+            "total_people_in_gym": self.coordinator.data.get("totalPeopleInGym"),
             "integration": DOMAIN,
         }

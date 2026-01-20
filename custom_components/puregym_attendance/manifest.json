@@ -1,12 +1,12 @@
 {
   "domain": "puregym_attendance",
   "name": "PureGym Attendance",
-  "documentation": "https://github.com/nckltcha/puregym-attendance",
-  "issue_tracker": "https://github.com/nckltcha/puregym-attendance/issues",
+  "documentation": "https://github.com/bigsby-exe/home-assistant-puregym",
+  "issue_tracker": "https://github.com/bigsby-exe/home-assistant-puregym/issues",
   "dependencies": [],
   "iot_class": "cloud_polling",
   "config_flow": true,
   "codeowners": ["@nckltcha"],
-  "requirements": [],
-  "version": "0.0.1"
+  "requirements": ["aiohttp>=3.8.0"],
+  "version": "0.0.2"
 }

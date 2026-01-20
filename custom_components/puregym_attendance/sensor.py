@@ -27,7 +27,9 @@ class PuregymAttendanceSensor(
     @property
     def state(self):
         """Return the state of the sensor."""
-        return self.coordinator.data.get("body")
+        if self.coordinator.data is None:
+            return None
+        return self.coordinator.data.get("totalPeopleInGym")
 
     @property
     def icon(self):
